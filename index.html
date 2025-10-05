@@ -34,7 +34,7 @@
   <div class="slider-container">
     音量 <span id="volumeValue">100</span> %
     <input type="range" id="volume" min="0" max="100" value="100" 
-      oninput="document.getElementById('volumeValue').textContent=this.value">
+      oninput="document.getElementById("volumeValue").textContent=this.value">
   </div>
 
   <table id="grid"></table>
@@ -137,11 +137,9 @@
         tempo: document.getElementById("tempo").value,
         volume: document.getElementById("volume").value / 100
       };
-      // 俳句配列（空白含む）を保存
       for (let c = 1; c < grid.rows[0].cells.length; c++) {
         data.haikuArray.push(grid.rows[0].cells[c].textContent);
       }
-      // 音符グリッドを保存
       for (let r = 1; r < grid.rows.length; r++) {
         let rowData = [];
         for (let c = 1; c < grid.rows[r].cells.length; c++) {
@@ -174,7 +172,7 @@
           for (let i = 0; i < data.haikuArray.length; i++) {
             grid.rows[0].cells[i + 1].textContent = data.haikuArray[i];
           }
-          document.getElementById("haiku").value = data.haikuArray.filter(c => c).join("");
+          document.getElementById("haiku").value = data.haikuArray.map(c => c || " ").join("");
         }
         if (data.tempo) {
           document.getElementById("tempo").value = data.tempo;
