@@ -42,11 +42,8 @@
   <script>
     const pitches = ["高レ", "ド", "ラ", "ソ", "ファ", "低レ"];
     const grid = document.getElementById("grid");
-
-    // PolySynth を使用（音源ファイル不要）
     const synth = new Tone.PolySynth().toDestination();
 
-    // 初期テーブル作成
     function createGrid(columns = 15) {
       grid.innerHTML = "";
       let header = grid.insertRow();
@@ -94,29 +91,27 @@
       synth.triggerAttackRelease(note, duration);
     }
 
-    // 俳句をマス目に配置（5-7-5＋休符）
     function placeHaiku() {
       let text = document.getElementById("haiku").value.replace(/\s/g, "");
-      let counts = [5,7,5];
+      let counts = [5, 7, 5];
       let chars = [];
       let index = 0;
-      for (let block=0; block<counts.length; block++){
-        for (let i=0;i<counts[block] && index<text.length;i++){
+      for (let block = 0; block < counts.length; block++) {
+        for (let i = 0; i < counts[block] && index < text.length; i++) {
           chars.push(text[index++]);
         }
-        if(block<counts.length-1) chars.push(""); // 休符
+        if (block < counts.length - 1) chars.push(""); // 休符
       }
       createGrid(chars.length);
-      for(let i=0;i<chars.length;i++){
-        grid.rows[0].cells[i+1].textContent = chars[i];
+      for (let i = 0; i < chars.length; i++) {
+        grid.rows[0].cells[i + 1].textContent = chars[i];
       }
     }
 
-    // 再生関連
     let isPlaying = false;
 
     async function playMelody() {
-      await Tone.start(); // ユーザー操作で音再生を許可
+      await Tone.start();
       if (isPlaying) return;
       isPlaying = true;
       const tempo = document.getElementById("tempo").value;
@@ -135,14 +130,18 @@
 
     function stopMelody() { isPlaying = false; }
 
-    // JSON保存
     function saveJSON() {
       let data = {
         grid: [],
-        haiku: document.getElementById("haiku").value,
+        haikuArray: [],
         tempo: document.getElementById("tempo").value,
         volume: document.getElementById("volume").value / 100
       };
+      // 俳句配列（空白含む）を保存
+      for (let c = 1; c < grid.rows[0].cells.length; c++) {
+        data.haikuArray.push(grid.rows[0].cells[c].textContent);
+      }
+      // 音符グリッドを保存
       for (let r = 1; r < grid.rows.length; r++) {
         let rowData = [];
         for (let c = 1; c < grid.rows[r].cells.length; c++) {
@@ -157,7 +156,6 @@
       a.click();
     }
 
-    // JSON読み込み＆俳句マス目に表示
     document.getElementById("fileInput").addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -172,12 +170,11 @@
             }
           }
         }
-        if (data.haiku) {
-          document.getElementById("haiku").value = data.haiku;
-          const chars = data.haiku.replace(/\s/g, "").split("");
-          for (let i = 0; i < chars.length && i + 1 < grid.rows[0].cells.length; i++) {
-            grid.rows[0].cells[i + 1].textContent = chars[i];
+        if (data.haikuArray) {
+          for (let i = 0; i < data.haikuArray.length; i++) {
+            grid.rows[0].cells[i + 1].textContent = data.haikuArray[i];
           }
+          document.getElementById("haiku").value = data.haikuArray.filter(c => c).join("");
         }
         if (data.tempo) {
           document.getElementById("tempo").value = data.tempo;
