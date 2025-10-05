@@ -1,1 +1,80 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<title>俳句メロディー作品ギャラリー</title>
+<style>
+  body { font-family:"Yu Gothic",sans-serif; background:#f8f8f8; }
+  header { background:#3aa14a; color:white; padding:18px 0; text-align:center; font-size:28px; }
+  .container { width:90%; margin:20px auto; display:flex; gap:20px; justify-content:flex-start; flex-wrap:wrap; }
+  .card { background:white; width:260px; padding:18px; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.08); text-align:center; }
+  .title { font-size:20px; margin-bottom:6px; }
+  .author { color:#666; margin-bottom:12px; }
+  .btn { background:#4caf50; color:white; padding:8px 12px; border-radius:6px; text-decoration:none; display:inline-block; }
+</style>
+</head>
+<body>
+<header>🎵 俳句メロディー作品ギャラリー 🎵</header>
+
+<div class="container" id="gallery"></div>
+
+<script>
+// === ここで作品データを定義します ===
+// 日本語ファイル名もOKです！
+const works = [
+  { title: "わたあめ", author: "新井さん", file: "works/アライ・わたあめ.json" },
+  { title: "ふるいけや", author: "石原さん", file: "works/furuikeya.json" },
+  { title: "増税", author: "片岡さん", file: "works/kataoka.json" },
+  { title: "はつざくら", author: "木原ゆうひさん", file: "works/kiharayuhi.json" },
+  { title: "まんげつ", author: "木原ゆきと", file: "works/kiharayukito.json" },
+  { title: "ふるいけや", author: "小早川さん", file: "works/kobayakawa.json" },
+  { title: "ふるいけや", author: "佐伯さん", file: "works/saeki.json" },
+  { title: "くきのかや", author: "謝さん", file: "works/sya.json" },
+  { title: "バロンは散歩", author: "城地さん", file: "works/jouchi.json" },
+  { title: "めいげつ", author: "鈴木さん", file: "works/suzuki.json" },
+  { title: "ふるいけや", author: "田中さん", file: "works/tanaka.json" },
+  { title: "ふるいけや", author: "田村さん", file: "works/tamura.json" },
+  { title: "ふるいけや", author: "保さん", file: "works/tamotsu.json" },
+  { title: "いぬあるき", author: "中尾さん", file: "works/nakao.json" },
+  { title: "ちはやぶる", author: "中山さん", file: "works/nakayama.json" },
+  { title: "花火", author: "埜村さん", file: "works/nomura.json" },
+  { title: "ふるいけや", author: "橋本さん", file: "works/hashimoto.json" },
+  { title: "よるのかね", author: "前島さん", file: "works/maejima.json" },
+  { title: "夏草や", author: "松﨑さん", file: "works/matsuzaki.json" },
+  { title: "よのなかよ", author: "松葉さん", file: "works/matsuba.json" },
+  { title: "すみのえの", author: "村竹さん", file: "works/muratake.json" },
+  { title: "ふるいけや", author: "森安さん", file: "works/kataoka.json" },
+  { title: "バロンドール", author: "矢守さん", file: "works/yamori.json" }
+];
+
+// === カードを動的に生成 ===
+const gallery = document.getElementById("gallery");
+works.forEach(work => {
+  const card = document.createElement("div");
+  card.className = "card";
+
+  const title = document.createElement("div");
+  title.className = "title";
+  title.textContent = work.title;
+
+  const author = document.createElement("div");
+  author.className = "author";
+  author.textContent = "作者：" + work.author;
+
+  const btn = document.createElement("a");
+  btn.className = "btn";
+  // encodeURIComponentで日本語ファイル名にも対応！
+  btn.href = "index.html?data=" + encodeURIComponent(work.file);
+  btn.textContent = "作品を再生";
+
+  card.appendChild(title);
+  card.appendChild(author);
+  card.appendChild(btn);
+  gallery.appendChild(card);
+});
+</script>
+</body>
+</html>
+
+
 
