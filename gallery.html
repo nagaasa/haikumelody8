@@ -4,13 +4,15 @@
 <meta charset="utf-8" />
 <title>俳句メロディー作品ギャラリー</title>
 <style>
-  body { font-family:"Yu Gothic",sans-serif; background:#f8f8f8; }
+  body { font-family:"Yu Gothic",sans-serif; background:#f8f8f8; margin:0; }
   header { background:#3aa14a; color:white; padding:18px 0; text-align:center; font-size:28px; }
   .container { width:90%; margin:20px auto; display:flex; gap:20px; justify-content:flex-start; flex-wrap:wrap; }
-  .card { background:white; width:260px; padding:18px; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.08); text-align:center; }
+  .card { background:white; width:260px; padding:18px; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.08); text-align:center; transition: transform 0.2s; }
+  .card:hover { transform: scale(1.03); }
   .title { font-size:20px; margin-bottom:6px; }
   .author { color:#666; margin-bottom:12px; }
-  .btn { background:#4caf50; color:white; padding:8px 12px; border-radius:6px; text-decoration:none; display:inline-block; }
+  .btn { background:#4caf50; color:white; padding:8px 12px; border-radius:6px; text-decoration:none; display:inline-block; transition: background 0.2s; }
+  .btn:hover { background:#43a047; }
 </style>
 </head>
 <body>
@@ -19,12 +21,13 @@
 <div class="container" id="gallery"></div>
 
 <script>
-// === ここで作品データを定義します ===
-// 日本語ファイル名もOKです！
+// === 作品データ ===
 const works = [
-  { title: "テスト", author: "asako", file: "works/asako test.json" },
-  { title: "春の海", author: "nagamine", file: "works/harunoumi_nagamine_asako.json" }
- ];
+  { title: "わたあめ", author: "新井さん", file: "works/arai.json" },
+  { title: "ふるいけや", author: "石原さん", file: "works/furuikeya.json" },
+  { title: "増税", author: "片岡さん", file: "works/kataoka.json" },
+  { title: "はるのうみ", author: "ながみね あさこ", file: "works/harunoumi_nagamine_asako.json" }
+];
 
 // === カードを動的に生成 ===
 const gallery = document.getElementById("gallery");
@@ -42,7 +45,7 @@ works.forEach(work => {
 
   const btn = document.createElement("a");
   btn.className = "btn";
-  // encodeURIComponentで日本語ファイル名にも対応！
+  // encodeURIComponent で安全にファイル名を処理
   btn.href = "index.html?data=" + encodeURIComponent(work.file);
   btn.textContent = "作品を再生";
 
@@ -54,6 +57,7 @@ works.forEach(work => {
 </script>
 </body>
 </html>
+
 
 
 
