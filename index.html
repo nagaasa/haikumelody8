@@ -1,1 +1,283 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<title>俳句メロディーメーカー</title>
+<style>
+  body { font-family: "Yu Gothic", sans-serif; background:#f0f0f0; text-align:center; }
+  textarea { width:80%; height:60px; margin:10px 0; }
+  button { margin:5px; padding:6px 10px; }
+  .slider-container { margin:10px 0; }
+  table { margin: 20px auto; border-collapse:collapse; }
+  td, th { width:34px; height:34px; border:1px solid #ccc; cursor:pointer; }
+  td.active { background:#4caf50; }
+  td.blank { background:white; }
+  td.pitch { width:36px; text-align:center; font-size:14px; background:transparent; border:none; }
+  #haikuText { font-size:20px; margin: 10px 0; color:#333; }
+</style>
+</head>
+<body>
+  <h1>俳句メロディーメーカー</h1>
+
+  <textarea id="haiku" placeholder="ひらがなで俳句を入力してください（例：ふるいけや　かわずとびこむ　みずのおと）"></textarea><br>
+
+  <button onclick="placeHaiku()">俳句をマス目に配置</button>
+  <button onclick="playMelody()">再生</button>
+  <button onclick="stopMelody()">停止</button>
+  <button onclick="saveJSON()">作品を保存（JSONダウンロード）</button>
+  <input type="file" id="fileInput"> 
+  <button onclick="resetGrid()">リセット</button>
+
+  <div class="slider-container">
+    テンポ <span id="tempoLabel">120</span> BPM<br>
+    <input type="range" id="tempo" min="60" max="240" value="120" oninput="document.getElementById('tempoLabel').textContent=this.value">
+    <br>
+    音量 <span id="volumeLabel">100</span> %<br>
+    <input type="range" id="volume" min="0" max="100" value="100" oninput="document.getElementById('volumeLabel').textContent=this.value">
+  </div>
+
+  <div id="haikuText"></div>
+
+  <table id="grid"></table>
+
+<script>
+/* ===== 設定（必要ならここを変更） ===== */
+const pitches = ["高レ","ド","ラ","ソ","ファ","低レ"]; // 上から下へ（行の順）
+const noteFreq = {
+  "高レ": 587.33,
+  "ド": 523.25,
+  "ラ": 440.00,
+  "ソ": 392.00,
+  "ファ": 349.23,
+  "低レ": 293.66
+};
+/* ==================================== */
+
+const grid = document.getElementById('grid');
+let audioCtx = null;
+let gridData = []; // [pitchIndex][columnIndex]
+
+// グリッドを作成（列数を指定）
+function createGrid(columns = 16) {
+  grid.innerHTML = "";
+  // ヘッダ行（左上は空白）
+  const hdr = grid.insertRow();
+  hdr.insertCell(); // 空
+  for (let i = 0; i < columns; i++) {
+    const th = hdr.insertCell();
+    th.textContent = ""; // 時間目盛りが必要ならここに番号を入れる
+  }
+  // 各ピッチ行
+  for (let r = 0; r < pitches.length; r++) {
+    const row = grid.insertRow();
+    const th = row.insertCell();
+    th.className = "pitch";
+    th.textContent = pitches[r];
+    for (let c = 0; c < columns; c++) {
+      const cell = row.insertCell();
+      cell.className = "blank";
+      cell.onclick = () => toggleCell(cell);
+    }
+  }
+  // gridData 初期化
+  gridData = Array(pitches.length).fill(null).map(()=> Array(columns).fill(0));
+}
+
+// セル切替
+function toggleCell(cell){
+  const row = cell.parentNode.rowIndex - 1; // header を引く
+  const col = cell.cellIndex - 1;
+  if (row < 0 || col < 0) return;
+  gridData[row][col] = gridData[row][col] ? 0 : 1;
+  cell.className = gridData[row][col] ? "active" : "blank";
+}
+
+// 俳句をマス目に配置（単純に順にオンにする簡易配置）
+function placeHaiku(){
+  const text = document.getElementById('haiku').value.replace(/\s+/g,"");
+  if (!text) return alert("俳句を入力してください");
+  // ここでは簡易に文字数分だけ、列に順にONにする（必要に応じて独自の配置ルールへ変更）
+  const len = text.length;
+  createGrid(Math.max(10, len + 2));
+  for (let i = 0; i < len && i < gridData[0].length; i++){
+    const row = i % pitches.length;
+    gridData[row][i] = 1;
+    grid.rows[row+1].cells[i+1].className = "active";
+  }
+  showHaikuText(text);
+}
+
+// 画面下に俳句表示
+function showHaikuText(text){
+  document.getElementById('haikuText').textContent = text || "";
+}
+
+// 再生
+function playMelody(){
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const tempo = parseInt(document.getElementById('tempo').value);
+  const volume = parseInt(document.getElementById('volume').value) / 100;
+  const t0 = audioCtx.currentTime;
+  for (let c = 0; c < gridData[0].length; c++){
+    for (let r = 0; r < gridData.length; r++){
+      if (gridData[r][c] === 1){
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = noteFreq[pitches[r]];
+        gain.gain.value = volume;
+        osc.connect(gain).connect(audioCtx.destination);
+        const start = t0 + (c * 60 / tempo);
+        osc.start(start);
+        osc.stop(start + 0.35);
+      }
+    }
+  }
+}
+
+// 停止（AudioContext をリセット）
+function stopMelody(){
+  if (audioCtx){
+    try { audioCtx.close(); } catch(e){}
+    audioCtx = null;
+  }
+}
+
+// JSON をダウンロードして保存
+function saveJSON(){
+  const haiku = document.getElementById('haiku').value || "";
+  const tempo = parseInt(document.getElementById('tempo').value);
+  const obj = {
+    haiku,
+    tempo,
+    grid: gridData
+  };
+  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:"application/json"});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (haiku ? haiku.replace(/\s+/g,"_") : "haiku") + ".json";
+  a.click();
+}
+
+// リセット（空グリッド）
+function resetGrid(){
+  createGrid(10);
+  document.getElementById('haiku').value = "";
+  showHaikuText("");
+}
+
+// JSON を読み込んで復元（自動的に配列の向きを判定して転置処理も行う）
+function loadFromJSON(data){
+  if (!data || !data.grid) return;
+  let loadedGrid = data.grid;
+  // 1) もし loadedGrid の行数がピッチ数と一致する -> そのまま使える
+  if (loadedGrid.length === pitches.length) {
+    // OK
+  } else if (loadedGrid[0] && loadedGrid[0].length === pitches.length) {
+    // 2) もし列数がピッチ数と一致している（転置されたデータ） -> 転置して使う
+    loadedGrid = transpose(loadedGrid);
+  } else {
+    // 3) どちらでもない場合：長い方を列数とみなして自動調整（安全策）
+    // ここでは「行数がピッチより多い」なら前からピッチ数だけ取り、足りない場合はゼロで埋める
+    if (loadedGrid.length > pitches.length) {
+      loadedGrid = loadedGrid.slice(0, pitches.length);
+    } else {
+      // 列長を揃える
+      const maxCols = Math.max(...loadedGrid.map(r=>r.length));
+      loadedGrid = Array(pitches.length).fill(null).map((_,i) => (loadedGrid[i] || Array(maxCols).fill(0)).slice(0,maxCols));
+    }
+  }
+
+  const columns = loadedGrid[0].length;
+  createGrid(columns);
+  gridData = Array(pitches.length).fill(null).map(()=> Array(columns).fill(0));
+
+  for (let r = 0; r < pitches.length; r++){
+    for (let c = 0; c < columns; c++){
+      if (loadedGrid[r] && loadedGrid[r][c]) {
+        gridData[r][c] = 1;
+        const cell = grid.rows[r+1].cells[c+1];
+        if (cell) cell.className = "active";
+      }
+    }
+  }
+
+  // tempo と 俳句 を復元（あれば）
+  if (data.tempo) {
+    document.getElementById('tempo').value = data.tempo;
+    document.getElementById('tempoLabel').textContent = data.tempo;
+  }
+  if (data.haiku) {
+    document.getElementById('haiku').value = data.haiku;
+    showHaikuText(data.haiku);
+  }
+}
+
+// 転置関数
+function transpose(a){
+  const rows = a.length, cols = a[0].length;
+  const t = Array(cols).fill(null).map(()=> Array(rows).fill(0));
+  for (let r=0;r<rows;r++){
+    for (let c=0;c<cols;c++){
+      t[c][r] = a[r][c];
+    }
+  }
+  return t;
+}
+
+/* ファイル選択から読み込む */
+document.getElementById('fileInput').addEventListener('change', function(e){
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const obj = JSON.parse(reader.result);
+      loadFromJSON(obj);
+    } catch(err) {
+      alert("JSONの読み込みに失敗しました: " + err);
+    }
+  };
+  reader.readAsText(f, "utf-8");
+});
+
+/* URL の data パラメータから読み込み（例 index.html?data=works/arai.json） */
+window.addEventListener('load', () => {
+  createGrid(10); // 初期
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('data')) {
+    const url = params.get('data');
+    fetch(url)
+      .then(r => {
+        if (!r.ok) throw new Error("fetch失敗: " + r.status);
+        return r.json();
+      })
+      .then(json => {
+        // tempoが文字列でも数値に変換
+        if (json.tempo) {
+          document.getElementById('tempo').value = parseInt(json.tempo);
+          document.getElementById('tempoLabel').textContent = json.tempo;
+        }
+        // volumeがある場合に反映
+        if (json.volume) {
+          document.getElementById('volume').value = json.volume * 100;
+          document.getElementById('volumeLabel').textContent = json.volume * 100;
+        }
+        // haikuを表示
+        if (json.haiku) {
+          document.getElementById('haiku').value = json.haiku;
+          showHaikuText(json.haiku);
+        }
+        // gridを読み込み
+        loadFromJSON(json);
+      })
+      .catch(err => {
+        console.error("JSON読み込みエラー:", err);
+      });
+  }
+});
+</script>
+</body>
+</html>
+
 
